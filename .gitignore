@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+.DS_Store
+TMDB_movie_dataset_cleaned.csv
+TMDB_movie_dataset_v11.csv
