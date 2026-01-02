@@ -110,6 +110,14 @@ database_name = "movies_db"
 my_sql_url = f'mysql+pymysql://{user}:{password}@{host}/movies_db'
 engine = create_engine(my_sql_url, echo=True)
 
+@app.get("/movies/search/{movie_id}", tags = tag1, summary="Get movie from the database by ID", response_model=list[MoviesCreate])
+def get_details(movie_id: int):
+
+    with Session(engine) as session:
+        statement = select(Movies).where(Movies.id == movie_id)
+        results = session.exec(statement).all()
+        return results
+    
 @app.get("/movies/sql", tags = tag1, summary="Get movies from the database inside the specified range", response_model=list[MoviesRead])
 def view_movies(limit: Optional[int] = 50, offset: Optional[int] = 0):
 

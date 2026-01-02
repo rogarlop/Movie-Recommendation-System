@@ -10,7 +10,9 @@ from dotenv import load_dotenv
 load_dotenv()
 omdb_key = os.getenv("OMDB_API_KEY")
 
-predetermined_img = Image.open("not-available.jpg")
+# predetermined_img = Image.open("not-available.jpg")
+predetermined_img = Image.open("No_image.png")
+
 
 st.set_page_config(layout="wide")
 
@@ -41,28 +43,46 @@ def recommendation(movie_title):
 
     return data['data']
 
+#Modify to get the correct poster. It can be returned specifying an "i" parameter which is the IMDB id that needs to be valid.
 def posters(movie_title):
     response = requests.get('http://www.omdbapi.com/', params={'apikey': omdb_key, 't':movie_title})
     poster = response.json()
+
+    # if 'Search' in poster:
+    #     for posters in poster['Search']:
+    #         print(posters.get("Title"))
+    #     poster = poster['Search'][0]
+    #     poster_url = poster.get("Poster")
+    # else:
     poster_url = poster.get("Poster")
  
     return poster_url
 
+def movie_details(movie_id, details = {'runtime', 'genres', 'production_countries', 'production_companies'}):
+    response = requests.get(f'http://127.0.0.1:8000/movies/search/{movie_id}')
+    data = response.json()
+
+    filtered = [{k: v for k, v in d.items() if k in details} for d in data]
+    
+    return filtered
+
+def details_graphic(movie_details):
+    expander = st.expander("See details")
+    text = "\n\n".join( f"**{' '.join(word.capitalize() for word in k.split('_'))}**: {v}" for k, v in movie_details.items() )
+    expander.write(text)
+
 def show_recommendations(data):
     cols = st.columns([1,1,1,1,1])
-
+    
     keys = data[0].keys() 
     lists = {k: [record[k] for record in data] for k in keys}
-
     for i, col in enumerate(cols):
+        image = posters(lists['original_title'][i]) #Must be changed by ImDB Id to get the correct poster
         
-        image = posters(lists['original_title'][i])
-
         with col:
-            
             if not image or image == 'N/A':
                 image = predetermined_img
-
+            
             st.image(image)
             st.markdown(f"""
                 <div style="
@@ -71,11 +91,13 @@ def show_recommendations(data):
                     padding:40px;
                     border-radius:8px;
                 ">
-                    <h3>{lists['original_title'][i]} </h3>
-                    <h4>({lists['release_date'][i]})</h4>
-                    <p> {lists['production_companies'][i]} </p>
+                    <h3>{lists['original_title'][i]} ({lists['release_date'][i]})</h3>
                 </div>
             """, unsafe_allow_html=True)
+
+            current_id = lists['id'][i]
+            details = movie_details(current_id)
+            details_graphic(details[0])
 
 
 def button_clicked(btn_name):
